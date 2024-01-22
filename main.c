@@ -4,7 +4,7 @@
 
 #define FILENAME_MAX_LEN 256
 
-void archive_files(int count, char* files[], const char* archive_filename) {
+void archive_files(int count, char *files[], const char *archive_filename) {
     FILE *archive_file = fopen(archive_filename, "wb");
 
     if (archive_file == NULL) {
@@ -43,7 +43,7 @@ void archive_files(int count, char* files[], const char* archive_filename) {
     fclose(archive_file);
 }
 
-void unarchive_files(const char* archive_filename) {
+void unarchive_files(const char *archive_filename) {
     FILE *archive_file = fopen(archive_filename, "rb");
 
     if (archive_file == NULL) {
@@ -84,7 +84,7 @@ void unarchive_files(const char* archive_filename) {
     fclose(archive_file);
 }
 
-void list_archive_contents(const char* archive_filename) {
+void list_archive_contents(const char *archive_filename) {
     FILE *archive_file = fopen(archive_filename, "rb");
 
     if (archive_file == NULL) {
@@ -111,20 +111,49 @@ void list_archive_contents(const char* archive_filename) {
     fclose(archive_file);
 }
 
-
 int main(int argc, char *argv[]) {
-//    if (argc < 3) {
-//        fprintf(stderr, "Использование: %s <archive.arc> <file1> [file2] ...\n", argv[0]);
-//        return 1;
-//    }
-//
-//    // Архивация файлов
-//    archive_files(argc - 2, &argv[2], argv[1]);
-//
-//    // Для разархивации (пример вызова)
-//    unarchive_files("archive.arc");
-//
-//    list_archive_contents("archive.arc");
-//
+    if (argc < 3) {
+        fprintf(stderr, "Использование: %s --file <archive.arc> [--create | --extract | --list] [files...]\n", argv[0]);
+        return 1;
+    }
+
+    char *archive_filename = NULL;
+    int create = 0, extract = 0, list = 0;
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--file") == 0) {
+            if (i + 1 < argc) {
+                archive_filename = argv[++i];
+            } else {
+                fprintf(stderr, "Ошибка: Отсутствует имя файла архива после --file\n");
+                return 1;
+            }
+        } else if (strcmp(argv[i], "--create") == 0) {
+            create = 1;
+        } else if (strcmp(argv[i], "--extract") == 0) {
+            extract = 1;
+        } else if (strcmp(argv[i], "--list") == 0) {
+            list = 1;
+        }
+    }
+
+    if (!archive_filename) {
+        fprintf(stderr, "Ошибка: Не указан файл архива\n");
+        return 1;
+    }
+
+    if (create + extract + list != 1) {
+        fprintf(stderr, "Ошибка: Укажите одну из команд --create, --extract или --list\n");
+        return 1;
+    }
+
+    if (create) {
+        archive_files(argc - 4, &argv[4], archive_filename);
+    } else if (extract) {
+        unarchive_files(archive_filename);
+    } else if (list) {
+        list_archive_contents(archive_filename);
+    }
+
     return 0;
 }
