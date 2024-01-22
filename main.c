@@ -19,18 +19,15 @@ void archive_files(int count, char *files[], const char *archive_filename) {
             continue;
         }
 
-        // Получаем размер файла
         fseek(input_file, 0, SEEK_END);
         long filesize = ftell(input_file);
         fseek(input_file, 0, SEEK_SET);
 
-        // Записываем имя файла и его размер в архив
         char filename[FILENAME_MAX_LEN] = {0};
         strncpy(filename, files[i], FILENAME_MAX_LEN);
         fwrite(filename, sizeof(char), FILENAME_MAX_LEN, archive_file);
         fwrite(&filesize, sizeof(filesize), 1, archive_file);
 
-        // Копируем содержимое файла в архив
         char buffer[1024];
         while (!feof(input_file)) {
             size_t read = fread(buffer, sizeof(char), sizeof(buffer), input_file);
@@ -55,7 +52,6 @@ void unarchive_files(const char *archive_filename) {
         char filename[FILENAME_MAX_LEN] = {0};
         long filesize;
 
-        // Читаем имя файла и его размер из архива
         if (fread(filename, sizeof(char), FILENAME_MAX_LEN, archive_file) == 0) break;
         fread(&filesize, sizeof(filesize), 1, archive_file);
 
@@ -65,7 +61,6 @@ void unarchive_files(const char *archive_filename) {
             continue;
         }
 
-        // Копируем содержимое файла из архива
         char buffer[1024];
         for (long remaining = filesize; remaining > 0;) {
             size_t to_read = sizeof(buffer);
@@ -92,19 +87,17 @@ void list_archive_contents(const char *archive_filename) {
         exit(1);
     }
 
-    printf("Список файлов в архиве '%s':\n", archive_filename);
+    printf("List of files in the archive '%s':\n", archive_filename);
 
     while (!feof(archive_file)) {
         char filename[FILENAME_MAX_LEN] = {0};
         long filesize;
 
-        // Читаем имя файла и его размер из архива
         if (fread(filename, sizeof(char), FILENAME_MAX_LEN, archive_file) == 0) break;
         fread(&filesize, sizeof(filesize), 1, archive_file);
 
         printf("%s\n", filename);
 
-        // Пропускаем данные файла
         fseek(archive_file, filesize, SEEK_CUR);
     }
 
@@ -113,7 +106,7 @@ void list_archive_contents(const char *archive_filename) {
 
 int main(int argc, char *argv[]) {
     if (argc < 3) {
-        fprintf(stderr, "Использование: %s --file <archive.arc> [--create | --extract | --list] [files...]\n", argv[0]);
+        fprintf(stderr, "Usage: %s --file <archive.arc> [--create | --extract | --list] [files...]\n", argv[0]);
         return 1;
     }
 
@@ -125,7 +118,7 @@ int main(int argc, char *argv[]) {
             if (i + 1 < argc) {
                 archive_filename = argv[++i];
             } else {
-                fprintf(stderr, "Ошибка: Отсутствует имя файла архива после --file\n");
+                fprintf(stderr, "Error: Missing archive file name after --file\n");
                 return 1;
             }
         } else if (strcmp(argv[i], "--create") == 0) {
@@ -138,12 +131,12 @@ int main(int argc, char *argv[]) {
     }
 
     if (!archive_filename) {
-        fprintf(stderr, "Ошибка: Не указан файл архива\n");
+        fprintf(stderr, "Error: Archive file not specified\n");
         return 1;
     }
 
     if (create + extract + list != 1) {
-        fprintf(stderr, "Ошибка: Укажите одну из команд --create, --extract или --list\n");
+        fprintf(stderr, "Error: Specify one of the commands --create, --extract, or --list\n");
         return 1;
     }
 
