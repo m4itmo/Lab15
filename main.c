@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define FILENAME_MAX_LEN 256
-
 void archive_files(int count, char *files[], const char *archive_filename) {
     FILE *archive_file = fopen(archive_filename, "wb");
 
@@ -11,6 +9,16 @@ void archive_files(int count, char *files[], const char *archive_filename) {
         perror("Error opening archive file");
         exit(1);
     }
+
+    size_t max_filename_len = 0;
+    for (int i = 0; i < count; ++i) {
+        size_t len = strlen(files[i]) + 1;
+        if (len > max_filename_len) {
+            max_filename_len = len;
+        }
+    }
+
+    fwrite(&max_filename_len, sizeof(max_filename_len), 1, archive_file);
 
     for (int i = 0; i < count; ++i) {
         FILE *input_file = fopen(files[i], "rb");
@@ -23,9 +31,11 @@ void archive_files(int count, char *files[], const char *archive_filename) {
         long filesize = ftell(input_file);
         fseek(input_file, 0, SEEK_SET);
 
-        char filename[FILENAME_MAX_LEN] = {0};
-        strncpy(filename, files[i], FILENAME_MAX_LEN);
-        fwrite(filename, sizeof(char), FILENAME_MAX_LEN, archive_file);
+        char *filename = calloc(max_filename_len, sizeof(char));
+        strcpy(filename, files[i]);
+        fwrite(filename, sizeof(char), max_filename_len, archive_file);
+        free(filename);
+
         fwrite(&filesize, sizeof(filesize), 1, archive_file);
 
         char buffer[1024];
@@ -48,14 +58,18 @@ void unarchive_files(const char *archive_filename) {
         exit(1);
     }
 
+    size_t max_filename_len;
+    fread(&max_filename_len, sizeof(max_filename_len), 1, archive_file);
+
     while (!feof(archive_file)) {
-        char filename[FILENAME_MAX_LEN] = {0};
+        char *filename = calloc(max_filename_len, sizeof(char));
         long filesize;
 
-        if (fread(filename, sizeof(char), FILENAME_MAX_LEN, archive_file) == 0) break;
+        if (fread(filename, sizeof(char), max_filename_len, archive_file) == 0) break;
         fread(&filesize, sizeof(filesize), 1, archive_file);
 
         FILE *output_file = fopen(filename, "wb");
+        free(filename);
         if (output_file == NULL) {
             perror("Error opening output file");
             continue;
@@ -87,16 +101,20 @@ void list_archive_contents(const char *archive_filename) {
         exit(1);
     }
 
+    size_t max_filename_len;
+    fread(&max_filename_len, sizeof(max_filename_len), 1, archive_file);
+
     printf("List of files in the archive '%s':\n", archive_filename);
 
     while (!feof(archive_file)) {
-        char filename[FILENAME_MAX_LEN] = {0};
+        char *filename = calloc(max_filename_len, sizeof(char));
         long filesize;
 
-        if (fread(filename, sizeof(char), FILENAME_MAX_LEN, archive_file) == 0) break;
+        if (fread(filename, sizeof(char), max_filename_len, archive_file) == 0) break;
         fread(&filesize, sizeof(filesize), 1, archive_file);
 
         printf("%s\n", filename);
+        free(filename);
 
         fseek(archive_file, filesize, SEEK_CUR);
     }

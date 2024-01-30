@@ -59,5 +59,3 @@ The program can be used with the following command-line arguments:
 ## Limitations
 
 - The program does not support file compression.
-- Maximum file name length is limited to 256 characters.
-- The program is designed for educational purposes and may not be suitable for production use.
